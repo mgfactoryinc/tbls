@@ -75,6 +75,8 @@ type DSN struct {
 type Format struct {
 	Adjust                   bool     `yaml:"adjust,omitempty"`
 	Sort                     bool     `yaml:"sort,omitempty"`
+	SortTables               *bool    `yaml:"sortTables,omitempty"`
+	SortColumns              *bool    `yaml:"sortColumns,omitempty"`
 	Number                   bool     `yaml:"number,omitempty"`
 	ShowOnlyFirstParagraph   bool     `yaml:"showOnlyFirstParagraph,omitempty"`
 	HideColumnsWithoutValues []string `yaml:"hideColumnsWithoutValues,omitempty"`
@@ -161,6 +163,20 @@ func Sort(sort bool) Option {
 		if sort {
 			c.Format.Sort = sort
 		}
+		return nil
+	}
+}
+
+func SortTables(sort bool) Option {
+	return func(c *Config) error {
+		c.Format.SortTables = &sort
+		return nil
+	}
+}
+
+func SortColumns(sort bool) Option {
+	return func(c *Config) error {
+		c.Format.SortColumns = &sort
 		return nil
 	}
 }
@@ -427,8 +443,18 @@ func (c *Config) ModifySchema(s *schema.Schema) error {
 	if err := c.FilterTables(s); err != nil {
 		return err
 	}
-	if c.Format.Sort {
-		if err := s.Sort(); err != nil {
+	if c.Format.Sort || c.Format.SortTables != nil || c.Format.SortColumns != nil {
+		sortTables := c.Format.Sort
+		sortColumns := c.Format.Sort
+		
+		if c.Format.SortTables != nil {
+			sortTables = *c.Format.SortTables
+		}
+		if c.Format.SortColumns != nil {
+			sortColumns = *c.Format.SortColumns
+		}
+		
+		if err := s.SortWithOptions(sortTables, sortColumns); err != nil {
 			return err
 		}
 	}
