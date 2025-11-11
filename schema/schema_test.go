@@ -241,6 +241,87 @@ func TestSchema_Sort(t *testing.T) {
 	}
 }
 
+func TestSchema_SortWithOptions(t *testing.T) {
+	tests := []struct {
+		name        string
+		sortTables  bool
+		sortColumns bool
+		wantTable   string
+		wantColumn  string
+	}{
+		{
+			name:        "sort both tables and columns",
+			sortTables:  true,
+			sortColumns: true,
+			wantTable:   "a",
+			wantColumn:  "a",
+		},
+		{
+			name:        "sort tables only",
+			sortTables:  true,
+			sortColumns: false,
+			wantTable:   "a",
+			wantColumn:  "b",
+		},
+		{
+			name:        "sort columns only",
+			sortTables:  false,
+			sortColumns: true,
+			wantTable:   "b",
+			wantColumn:  "a",
+		},
+		{
+			name:        "sort neither",
+			sortTables:  false,
+			sortColumns: false,
+			wantTable:   "b",
+			wantColumn:  "b",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			schema := Schema{
+				Name: "testschema",
+				Tables: []*Table{
+					&Table{
+						Name:    "b",
+						Comment: "table b",
+					},
+					&Table{
+						Name:    "a",
+						Comment: "table a",
+						Columns: []*Column{
+							&Column{
+								Name:    "b",
+								Comment: "column b",
+							},
+							&Column{
+								Name:    "a",
+								Comment: "column a",
+							},
+						},
+					},
+				},
+			}
+			
+			if err := schema.SortWithOptions(tt.sortTables, tt.sortColumns); err != nil {
+				t.Error(err)
+			}
+			
+			got := schema.Tables[0].Name
+			if got != tt.wantTable {
+				t.Errorf("table order: got %v, want %v", got, tt.wantTable)
+			}
+			
+			got2 := schema.Tables[1].Columns[0].Name
+			if got2 != tt.wantColumn {
+				t.Errorf("column order: got %v, want %v", got2, tt.wantColumn)
+			}
+		})
+	}
+}
+
 func TestRepair(t *testing.T) {
 	got := &Schema{}
 	f, err := os.Open(filepath.Join(testdataDir(), "test_repair.golden"))

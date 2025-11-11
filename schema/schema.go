@@ -298,6 +298,10 @@ func (s *Schema) HasTableWithLabels() bool {
 
 // Sort schema tables, columns, relations, constrains, and viewpoints.
 func (s *Schema) Sort() error {
+	return s.SortWithOptions(true, true)
+}
+
+func (s *Schema) SortWithOptions(sortTables, sortColumns bool) error {
 	for _, t := range s.Tables {
 		for _, c := range t.Columns {
 			sort.SliceStable(c.ParentRelations, func(i, j int) bool {
@@ -307,9 +311,11 @@ func (s *Schema) Sort() error {
 				return c.ChildRelations[i].Table.Name < c.ChildRelations[j].Table.Name
 			})
 		}
-		sort.SliceStable(t.Columns, func(i, j int) bool {
-			return t.Columns[i].Name < t.Columns[j].Name
-		})
+		if sortColumns {
+			sort.SliceStable(t.Columns, func(i, j int) bool {
+				return t.Columns[i].Name < t.Columns[j].Name
+			})
+		}
 		sort.SliceStable(t.Indexes, func(i, j int) bool {
 			return t.Indexes[i].Name < t.Indexes[j].Name
 		})
@@ -320,9 +326,11 @@ func (s *Schema) Sort() error {
 			return t.Triggers[i].Name < t.Triggers[j].Name
 		})
 	}
-	sort.SliceStable(s.Tables, func(i, j int) bool {
-		return s.Tables[i].Name < s.Tables[j].Name
-	})
+	if sortTables {
+		sort.SliceStable(s.Tables, func(i, j int) bool {
+			return s.Tables[i].Name < s.Tables[j].Name
+		})
+	}
 	sort.SliceStable(s.Relations, func(i, j int) bool {
 		return s.Relations[i].Table.Name < s.Relations[j].Table.Name
 	})
